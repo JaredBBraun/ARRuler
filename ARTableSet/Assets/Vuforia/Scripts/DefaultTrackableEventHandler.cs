@@ -25,15 +25,13 @@ namespace Vuforia
         public TextMeshProUGUI tm;
         public STATE state = STATE.PICTURE;
         public Camera mainCam;
-
+        public GameObject SpherePrefab;
         public Renderer quad;
         public Renderer bgquad;
 
-        [SerializeField]
-        float _horizontallimit = 2.5f, _verticallimit = 0f, dragSpeed = 0.1f;
-
-        Transform cachedTransform;
-        Vector3 startingPos;
+        GameObject go;
+        int x = 0;
+        
 
         #region PRIVATE_MEMBER_VARIABLES
 
@@ -50,6 +48,8 @@ namespace Vuforia
 
         void Start()
         {
+            Input.multiTouchEnabled = false;
+
             mTrackableBehaviour = GetComponent<TrackableBehaviour>();
             if (mTrackableBehaviour)
             {
@@ -161,22 +161,40 @@ namespace Vuforia
                             //hit.transform.gameObject.SendMessage("OnMouseDown");
                             if (hit.transform.gameObject.name == "Plane")
                             {
-                                //crosshair.transform.position = new Vector3(
-                                //    
-                                //    hit.point.x,
-                                //    hit.point.y,
-                                //    hit.point.z); // Input.GetTouch(i).position;
-
-                                GameObject go = Instantiate(GameObject.CreatePrimitive(PrimitiveType.Sphere),
+                                
+                                if (Input.touchCount > 0 && Input.touchCount < 2)
+                                {
+                                    go = Instantiate(SpherePrefab,
                                     new Vector3(hit.point.x, hit.point.y, hit.point.z),
                                     Quaternion.identity) as GameObject;
-                                go.tag = "glass";
-                                go.transform.localScale = new Vector3(go.transform.localScale.x * 7f,
-                                    go.transform.localScale.y * 7f,
-                                    go.transform.localScale.z * 7f);
+                                }
 
+                                
+
+                               
+                                go.transform.SetParent(GameObject.Find("ImageTarget").gameObject.transform);
+
+                                x++;
+                                go.tag = "glass";
+                                go.name = "Ball " + x.ToString();
+                                //Debug.Log(go.name + " Spawned");
+                                go.transform.localScale = new Vector3(go.transform.localScale.x * 3.5f,
+                                    go.transform.localScale.y * 3.5f,
+                                    go.transform.localScale.z * 3.5f);
+
+                                
                                 go.AddComponent<DragObject>();
+                                //go.AddComponent<UIDragObject>();
+                                //go.AddComponent<ExampleDragDropItem>();
                                 var PLANE = hit.transform.gameObject;
+                            }
+
+                            if (hit.transform.gameObject.tag == "glass")
+                            {
+                                Debug.Log("moving glass");
+                               
+                                go = hit.transform.gameObject;
+                                go.AddComponent<DragObject>();
                             }
                         }
                         
@@ -210,14 +228,7 @@ namespace Vuforia
             }
         }
 
-        void DragObj(Vector2 deltaPos , GameObject go)
-        {
-            go.transform.position = new Vector3(Mathf.Clamp((deltaPos.x * dragSpeed) + go.transform.position.x,
-                                                               startingPos.x - _horizontallimit, startingPos.x + _horizontallimit),
-                                                               Mathf.Clamp((deltaPos.y * dragSpeed) + go.transform.position.y,
-                                                               startingPos.y - _verticallimit, startingPos.y + _verticallimit),
-                                                                go.transform.position.z);
-        }
+        
 
 
     }

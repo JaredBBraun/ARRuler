@@ -91,6 +91,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\DragObject.cs" />
+    <Compile Include="Assets\Scripts\FollowTouch.cs" />
     <Compile Include="Assets\Scripts\TableSetController.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples\Scripts\Benchmark01.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples\Scripts\Benchmark01_UGUI.cs" />
