@@ -18,6 +18,7 @@ namespace Vuforia
         public enum STATE
         {
             IDLE,
+            WAITING_FOR_NO_TOUCH,
             PICTURE,
             PLACING,
             GLASS
@@ -27,6 +28,7 @@ namespace Vuforia
         public Camera mainCam;
         public GameObject SpherePrefab;
         public Renderer quad;
+        public Material glassMtl;
         public Renderer bgquad;
 
         GameObject go;
@@ -39,6 +41,8 @@ namespace Vuforia
         private bool takeHiResShot = true;
         private int resWidth = 1920;
         private int resHeight = 1080;
+
+        public bool TrackingHasBeenFound = false;
 
         #endregion // PRIVATE_MEMBER_VARIABLES
 
@@ -112,8 +116,14 @@ namespace Vuforia
 
             #endregion
 
-            tm.text = "Target Found";
-            state = STATE.PLACING;
+            TrackingHasBeenFound = true;
+
+            if (state == STATE.IDLE)
+            {
+                tm.text = "Target Found";
+                state = STATE.PLACING;
+            }
+
         }
 
 
@@ -137,8 +147,11 @@ namespace Vuforia
 
             Debug.Log("Trackable " + mTrackableBehaviour.TrackableName + " lost");
             #endregion
+
             tm.text = "Target Lost";
             //state = STATE.IDLE;
+
+            TrackingHasBeenFound = false ;
         }
 
         #endregion // PRIVATE_METHODS
@@ -167,6 +180,7 @@ namespace Vuforia
                                     go = Instantiate(SpherePrefab,
                                     new Vector3(hit.point.x, hit.point.y, hit.point.z),
                                     Quaternion.identity) as GameObject;
+                                    Debug.Log("adding game obj \"" + go.name + "\"");
                                 }
 
                                 
@@ -181,6 +195,7 @@ namespace Vuforia
                                 go.transform.localScale = new Vector3(go.transform.localScale.x * 3.5f,
                                     go.transform.localScale.y * 3.5f,
                                     go.transform.localScale.z * 3.5f);
+                                go.transform.localScale = new Vector3(5f, 5f, 5f);
 
                                 
                                 go.AddComponent<DragObject>();
@@ -214,8 +229,59 @@ namespace Vuforia
                 {
                     if (takeHiResShot)
                     {
-                        quad.material.mainTexture = bgquad.material.mainTexture;
 
+                        Image.PIXEL_FORMAT mPixelFormat = Image.PIXEL_FORMAT.RGB888;
+                        if (CameraDevice.Instance.SetFrameFormat(mPixelFormat, true))
+                        {
+                            Debug.Log("Successfully registered pixel format " + mPixelFormat.ToString());
+
+                        }
+                        else
+                        {
+                            Debug.LogError(
+                                "\nFailed to register pixel format: " + mPixelFormat.ToString() +
+                                "\nThe format may be unsupported by your device." +
+                                "\nConsider using a different pixel format.\n");
+
+                            mPixelFormat = Image.PIXEL_FORMAT.RGB565;
+                            if (CameraDevice.Instance.SetFrameFormat(mPixelFormat, true))
+                            {
+                                Debug.Log("Successfully registered pixel format " + mPixelFormat.ToString());
+
+                            }
+                            else
+                            {
+                                Debug.Log("2ND!!");
+                                Debug.LogError(
+                                    "\nFailed to register pixel format: " + mPixelFormat.ToString() +
+                                    "\nThe format may be unsupported by your device." +
+                                    "\nConsider using a different pixel format.\n");
+
+                            }
+                        }
+
+                        Vuforia.Image image = CameraDevice.Instance.GetCameraImage(mPixelFormat);
+                        if (image != null)
+                        {
+                            int origWid = image.Width; //original width
+                            int origHgt = image.Height; //original height
+
+                            int newWid = origHgt;//swap width with height
+                            int newHgt = origWid;//swap height with width
+                            Debug.Log("*** W " + origWid + " H " + origHgt);
+                        }
+                        else
+                            Debug.Log("No IMAGE");
+                        //quad.material.mainTexture = bgquad.material.mainTexture;
+                        quad.material.SetTexture("_MatcapRimRefl", (Texture2D)VuforiaRenderer.Instance.VideoBackgroundTexture); // bgquad.material.mainTexture);
+                        quad.material.SetTextureScale("_MatcapRimRefl", new Vector2(0.70262f, 0.93586f));
+                        //quad.material.SetTexture("_MatcapRimRefl", Instantiate(bgquad.material.mainTexture) as Texture2D);
+                        glassMtl.SetTexture("_MatcapRimRefl", (Texture2D)VuforiaRenderer.Instance.VideoBackgroundTexture); // bgquad.material.mainTexture);
+                        glassMtl.SetTextureScale("_MatcapRimRefl", new Vector2(0.70262f, 0.93586f));
+                        //glassMtl.SetTexture("_MatcapRimRefl", Instantiate(bgquad.material.mainTexture) as Texture2D);
+
+                        Debug.Log("Texture size w " + VuforiaRenderer.Instance.VideoBackgroundTexture.width + " h " + VuforiaRenderer.Instance.VideoBackgroundTexture.height);
+                        Debug.Log("Quad Size    w " + quad.material.GetTexture("_MatcapRimRefl").texelSize.x + " h " + quad.material.GetTexture("_MatcapRimRefl").texelSize.y);
                         takeHiResShot = false;
                         state = STATE.IDLE;
                     }
@@ -225,6 +291,14 @@ namespace Vuforia
             if (state == STATE.IDLE)
             {
                 tm.text = "Make Your Camera Look at Your Coupon";
+
+                if (TrackingHasBeenFound)
+                    state = STATE.WAITING_FOR_NO_TOUCH;
+            }
+            if (state == STATE.WAITING_FOR_NO_TOUCH)
+            {
+                if (Input.touchCount == 0)
+                    state = STATE.PLACING;
             }
         }
 

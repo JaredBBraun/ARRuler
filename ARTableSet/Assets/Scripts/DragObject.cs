@@ -46,11 +46,11 @@ public class DragObject : MonoBehaviour
                                
                                 //Debug.Log(hit.transform.gameObject.name + " Touched");
                                 go = this.gameObject;
-                                hit.transform.localScale = new Vector3(.3f, .3f, .3f);
-                                if (hit.transform.localScale.x > 1.832268f || hit.transform.localScale.x == 0.8672039)
-                                {
-                                    Destroy(hit.transform.gameObject);
-                                }
+                                //hit.transform.localScale = new Vector3(.3f, .3f, .3f);
+                                //if (hit.transform.localScale.x > 1.832268f || hit.transform.localScale.x == 0.8672039)
+                                //{
+                                //    Destroy(hit.transform.gameObject);
+                                //}
                                 
                                 hit.transform.gameObject.GetComponent<Renderer>().material.color = Color.green;
                                 touched = true;
@@ -88,8 +88,8 @@ public class DragObject : MonoBehaviour
 
                 case TouchPhase.Ended:
                     touched = false;
-                    
-                    go.transform.gameObject.GetComponent<Renderer>().material.color = Color.white;
+
+                    //go.transform.gameObject.GetComponent<Renderer>().material.color = Color.white;
                     Destroy(this);
                     break;
             }
